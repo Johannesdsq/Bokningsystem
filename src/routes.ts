@@ -4,6 +4,7 @@ import{createElement} from 'react';
 import NotFoundPage from './pages/NotFoundPage.tsx';
 import Start from './pages/Start.tsx';
 import Bokningar from './pages/Bokningar.tsx';
+import Boka from './pages/Boka.tsx';
 
 interface Route {
   element: JSX.Element;
@@ -17,6 +18,7 @@ interface Route {
 export default [
   NotFoundPage,
   Start,
+  Boka,
   Bokningar
 ]
   // map the route property of each page component to a Route

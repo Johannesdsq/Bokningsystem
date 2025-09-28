@@ -4,7 +4,7 @@ import { Row, Col, Table, Spinner, Alert } from 'react-bootstrap';
 Bokningar.route = {
   path: '/bokningar',
   menuLabel: 'Bokningar',
-  index: 2
+  index: 3
 }
 
 export default function Bokningar() {
