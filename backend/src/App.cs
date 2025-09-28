@@ -3,7 +3,9 @@ Globals = Obj(new
 {
     debugOn = true,
     detailedAclDebug = false,
-    aclOn = true,
+    // Disable ACL during development to avoid 405 on public endpoints
+    // Re-enable once proper ACL rules exist in the DB
+    aclOn = false,
     isSpa = true,
     port = args[0],
     serverName = "Minimal API Backend",
