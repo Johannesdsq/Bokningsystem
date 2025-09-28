@@ -27,13 +27,11 @@ export default function Boka() {
   const defaultDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
   const [form, setForm] = useState<BookingInput>({
-    // Use an existing sample user from the seed DB
     userId: 7,
     tableId: 1,
     bookingDate: defaultDate,
     bookingTime: '18:00',
     guests: 2,
-    // Status must satisfy DB constraint: 'booked' or 'cancelled'
     status: 'booked'
   });
 
@@ -50,7 +48,6 @@ export default function Boka() {
         body: JSON.stringify(form)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // On success, go to list of bookings
       navigate('/bokningar');
     } catch (err: any) {
       setError(err?.message || 'Okänt fel');
@@ -59,7 +56,6 @@ export default function Boka() {
     }
   }
 
-  // Handler that allows any typed bordsnummer by resolving/creating a table row
   async function submitHandler(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);

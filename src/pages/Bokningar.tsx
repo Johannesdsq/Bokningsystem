@@ -42,7 +42,6 @@ export default function Bokningar() {
     return () => { alive = false; };
   }, []);
 
-  // Load table map so we can show tableNumber instead of tableId
   useEffect(() => {
     let alive = true;
     (async () => {
