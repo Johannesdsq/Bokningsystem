@@ -59,11 +59,49 @@ export default function Boka() {
     }
   }
 
+  // Handler that allows any typed bordsnummer by resolving/creating a table row
+  async function submitHandler(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const tableNumber = Number(form.tableId);
+      let tableId: number | null = null;
+      const q = await fetch(`/api/tables?where=tableNumber=${tableNumber}&limit=1`);
+      if (!q.ok) throw new Error(`HTTP ${q.status}`);
+      const arr = await q.json();
+      if (Array.isArray(arr) && arr.length > 0) {
+        tableId = Number(arr[0]?.id);
+      }
+      if (!tableId) {
+        const create = await fetch('/api/tables', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tableNumber, seats: Math.max(2, Number(form.guests) || 2) })
+        });
+        if (!create.ok) throw new Error(`HTTP ${create.status}`);
+        const created = await create.json();
+        tableId = Number(created?.insertId);
+      }
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, tableId })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      navigate('/bokningar');
+    } catch (err: any) {
+      setError(err?.message || 'Ok��nt fel');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return <Row>
     <Col md={8} lg={6} xl={5}>
       <h2>Boka bord</h2>
       {error && <Alert variant="danger" className="mt-2">Kunde inte spara: {error}</Alert>}
-      <Form onSubmit={submit} className="mt-3">
+      <Form onSubmit={submitHandler} className="mt-3">
         <Form.Group className="mb-3">
           <Form.Label>Datum</Form.Label>
           <Form.Control type="date" value={form.bookingDate}

@@ -23,6 +23,7 @@ export default function Bokningar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [tableNames, setTableNames] = useState<Record<number, string>>({});
 
   useEffect(() => {
     let alive = true;
@@ -37,6 +38,23 @@ export default function Bokningar() {
       } finally {
         if (alive) setLoading(false);
       }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  // Load table map so we can show tableNumber instead of tableId
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/tables');
+        if (!res.ok) return;
+        const list: any[] = await res.json();
+        if (!alive) return;
+        const map: Record<number, string> = {};
+        list.forEach(t => { map[t.id] = String(t.tableNumber ?? t.id); });
+        setTableNames(map);
+      } catch {}
     })();
     return () => { alive = false; };
   }, []);
@@ -78,7 +96,7 @@ export default function Bokningar() {
           <tbody>
             {data.map(b => (
               <tr key={b.id}>
-                <td>{b.tableId}</td>
+                <td>{tableNames[b.tableId] ?? b.tableId}</td>
                 <td>{b.bookingDate}</td>
                 <td>{b.bookingTime}</td>
                 <td>{b.guests}</td>
