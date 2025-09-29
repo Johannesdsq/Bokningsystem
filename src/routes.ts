@@ -1,10 +1,12 @@
-import type {JSX} from 'react';
+﻿import type {JSX} from 'react';
 import{createElement} from 'react';
 // page components
 import NotFoundPage from './pages/NotFoundPage.tsx';
 import Start from './pages/Start.tsx';
 import Bokningar from './pages/Bokningar.tsx';
 import Boka from './pages/Boka.tsx';
+import Login from './pages/Login.tsx';
+import Register from './pages/Register.tsx';
 
 interface Route {
   element: JSX.Element;
@@ -19,7 +21,9 @@ export default [
   NotFoundPage,
   Start,
   Boka,
-  Bokningar
+  Bokningar,
+  Login,
+  Register
 ]
   // map the route property of each page component to a Route
   .map(x => (({ element: createElement(x), ...x.route }) as Route))

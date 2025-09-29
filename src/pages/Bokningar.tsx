@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Row, Col, Table, Spinner, Alert, Button } from 'react-bootstrap';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 Bokningar.route = {
   path: '/bokningar',
   menuLabel: 'Bokningar',
   index: 3
-}
+};
 
 export default function Bokningar() {
   type Booking = {
@@ -19,53 +21,87 @@ export default function Bokningar() {
     created: string;
   };
 
+  const { user, loading } = useAuth();
+  const location = useLocation();
   const [data, setData] = useState<Booking[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [tableNames, setTableNames] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    if (loading || !user) {
+      return;
+    }
     let alive = true;
+    setLoadingData(true);
     (async () => {
       try {
         const res = await fetch('/api/bookings');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
         const json = await res.json();
-        if (alive) setData(json);
+        if (alive) {
+          setData(json);
+        }
       } catch (e: any) {
-        if (alive) setError(e?.message || 'Okänt fel');
+        if (alive) {
+          setError(e?.message || 'Okänt fel');
+        }
       } finally {
-        if (alive) setLoading(false);
+        if (alive) {
+          setLoadingData(false);
+        }
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [loading, user]);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const res = await fetch('/api/tables');
-        if (!res.ok) return;
+        if (!res.ok) {
+          return;
+        }
         const list: any[] = await res.json();
-        if (!alive) return;
+        if (!alive) {
+          return;
+        }
         const map: Record<number, string> = {};
         list.forEach(t => { map[t.id] = String(t.tableNumber ?? t.id); });
         setTableNames(map);
-      } catch {}
+      } catch {
+        // ignore silently
+      }
     })();
     return () => { alive = false; };
   }, []);
 
+  if (loading) {
+    return <Row><Col><Spinner size="sm" className="me-2" /> Laddar...</Col></Row>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
   async function cancelBooking(id: number) {
-    if (!data) return;
-    if (!confirm('Vill du avboka denna bokning?')) return;
+    if (!data) {
+      return;
+    }
+    if (!confirm('Vill du avboka denna bokning?')) {
+      return;
+    }
     setDeleting(id);
     setError(null);
     try {
       const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
       setData(data.filter(b => b.id !== id));
     } catch (e: any) {
       setError(e?.message || 'Okänt fel');
@@ -77,9 +113,10 @@ export default function Bokningar() {
   return <Row>
     <Col>
       <h2>Bokningar</h2>
-      {loading && <div className="d-flex align-items-center gap-2"><Spinner size="sm" /> <span>Laddar...</span></div>}
-      {error && <Alert variant="danger">Kunde inte hämta bokningar: {error}</Alert>}
-      {data && (
+      {loadingData && <div className="d-flex align-items-center gap-2"><Spinner size="sm" /> <span>Laddar...</span></div>}
+      {error && <Alert variant="danger" className="mt-3">Kunde inte hämta bokningar: {error}</Alert>}
+      {data && data.length === 0 && !loadingData && !error && <Alert variant="info" className="mt-3">Inga bokningar ännu.</Alert>}
+      {data && data.length > 0 && (
         <Table striped hover responsive className="mt-3">
           <thead>
             <tr>
@@ -115,5 +152,5 @@ export default function Bokningar() {
         </Table>
       )}
     </Col>
-  </Row>
+  </Row>;
 }

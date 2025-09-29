@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Container, Nav, Navbar } from 'react-bootstrap';
+﻿import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Container, Nav, Navbar, Button } from 'react-bootstrap';
 import routes from '../routes';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
 
@@ -17,6 +18,21 @@ export default function Header() {
   // function that returns true if a menu item is 'active'
   const isActive = (path: string) =>
     path === currentRoute?.path || path === currentRoute?.parent;
+
+  const { user, loading, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    setExpanded(false);
+  };
+
+  const closeMenuSoon = () => setTimeout(() => setExpanded(false), 200);
+
+  const goTo = (path: string) => {
+    closeMenuSoon();
+    navigate(path);
+  };
 
   return <header>
     <Navbar
@@ -39,10 +55,37 @@ export default function Header() {
                   as={Link} key={i} to={path}
                   className={isActive(path) ? 'active' : ''}
                   /* close menu after selection*/
-                  onClick={() => setTimeout(() => setExpanded(false), 200)}
+                  onClick={closeMenuSoon}
                 >{menuLabel}</Nav.Link>
             )}
           </Nav>
+          <div className="d-flex align-items-center gap-2 ms-md-auto">
+            {loading ? null : user ? (
+              <>
+                <Navbar.Text className="text-white-50 small">
+                  {user.firstName} {user.lastName}
+                </Navbar.Text>
+                <Button
+                  size="sm"
+                  variant="outline-light"
+                  onClick={handleLogout}
+                >Logga ut</Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline-light"
+                  onClick={() => goTo('/login')}
+                >Logga in</Button>
+                <Button
+                  size="sm"
+                  variant="light"
+                  onClick={() => goTo('/registrera')}
+                >Registrera</Button>
+              </>
+            )}
+          </div>
         </Navbar.Collapse>
       </Container>
     </Navbar>
