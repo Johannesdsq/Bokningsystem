@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 Bokningar.route = {
   path: '/bokningar',
   menuLabel: 'Bokningar',
-  index: 3
+  index: 4
 };
 
 export default function Bokningar() {
@@ -160,3 +160,4 @@ export default function Bokningar() {
     </Col>
   </Row>;
 }
+

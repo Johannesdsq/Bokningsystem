@@ -1,4 +1,4 @@
-namespace WebApp;
+﻿namespace WebApp;
 public static class Server
 {
     public static void Start()
@@ -7,11 +7,13 @@ public static class Server
         App = builder.Build();
         Middleware();
         DebugLog.Start();
+        AvailabilityRoutes.Configure();
         Acl.Start();
         ErrorHandler.Start();
         FileServer.Start();
         LoginRoutes.Start();
         RestApi.Start();
+        AvailabilityRoutes.Start();
         Session.Start();
         // Start the server on port 3001
         var runUrl = "http://localhost:" + Globals.port;
@@ -60,3 +62,4 @@ public static class Server
         });
     }
 }
+

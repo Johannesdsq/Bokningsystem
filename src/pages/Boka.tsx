@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 Boka.route = {
   path: '/boka',
   menuLabel: 'Boka bord',
-  index: 2
+  index: 3
 };
 
 type BookingForm = {
@@ -144,3 +144,4 @@ export default function Boka() {
     </Col>
   </Row>;
 }
+

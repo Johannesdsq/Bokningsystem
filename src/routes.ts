@@ -3,8 +3,9 @@ import{createElement} from 'react';
 // page components
 import NotFoundPage from './pages/NotFoundPage.tsx';
 import Start from './pages/Start.tsx';
-import Bokningar from './pages/Bokningar.tsx';
+import Tillganglighet from './pages/Tillganglighet.tsx';
 import Boka from './pages/Boka.tsx';
+import Bokningar from './pages/Bokningar.tsx';
 import EditBooking from './pages/EditBooking.tsx';
 import Login from './pages/Login.tsx';
 import Register from './pages/Register.tsx';
@@ -21,6 +22,7 @@ interface Route {
 export default [
   NotFoundPage,
   Start,
+  Tillganglighet,
   Boka,
   Bokningar,
   EditBooking,
