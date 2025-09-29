@@ -1,40 +1,76 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-Boka.route = {
-  path: '/boka',
-  menuLabel: 'Boka bord',
-  index: 2
+EditBooking.route = {
+  path: '/bokningar/:bookingId/redigera'
 };
 
 type BookingForm = {
   tableNumber: number;
-  bookingDate: string; // YYYY-MM-DD
-  bookingTime: string; // HH:mm
+  bookingDate: string;
+  bookingTime: string;
   guests: number;
 };
 
-export default function Boka() {
+export default function EditBooking() {
+  const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
-  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<BookingForm | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadingBooking, setLoadingBooking] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const today = new Date();
-  const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
-  const defaultDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-
-  const [form, setForm] = useState<BookingForm>({
-    tableNumber: 1,
-    bookingDate: defaultDate,
-    bookingTime: '18:00',
-    guests: 2
-  });
-
-  const set = (k: keyof BookingForm, v: any) => setForm({ ...form, [k]: v });
+  useEffect(() => {
+    if (!bookingId) {
+      setError('Ingen bokning angiven.');
+      setLoadingBooking(false);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}`, {
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const booking = await res.json();
+        if (!alive) {
+          return;
+        }
+        let tableNumber = Number(booking.tableId);
+        const tableRes = await fetch(`/api/tables/${booking.tableId}`, {
+          credentials: 'include'
+        });
+        if (tableRes.ok) {
+          const table = await tableRes.json();
+          if (table?.tableNumber) {
+            tableNumber = Number(table.tableNumber);
+          }
+        }
+        setForm({
+          tableNumber,
+          bookingDate: booking.bookingDate,
+          bookingTime: booking.bookingTime,
+          guests: booking.guests
+        });
+      } catch (err: any) {
+        if (alive) {
+          setError(err?.message ?? 'Kunde inte läsa bokningen.');
+        }
+      } finally {
+        if (alive) {
+          setLoadingBooking(false);
+        }
+      }
+    })();
+    return () => { alive = false; };
+  }, [bookingId]);
 
   if (loading) {
     return <Row><Col><Spinner size="sm" className="me-2" /> Laddar...</Col></Row>;
@@ -43,6 +79,16 @@ export default function Boka() {
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
+
+  if (loadingBooking) {
+    return <Row><Col><Spinner size="sm" className="me-2" /> Laddar bokning...</Col></Row>;
+  }
+
+  if (!form) {
+    return <Row><Col><Alert variant="danger">{error ?? 'Kunde inte läsa bokningen.'}</Alert></Col></Row>;
+  }
+
+  const set = (key: keyof BookingForm, value: any) => setForm({ ...form, [key]: value });
 
   const getOrCreateTableId = async (tableNumber: number): Promise<number> => {
     const query = await fetch(`/api/tables?where=tableNumber=${tableNumber}&limit=1`, {
@@ -74,15 +120,19 @@ export default function Boka() {
     return Number(created?.insertId);
   };
 
-  const submitHandler = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitHandler = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!bookingId) {
+      setError('Ingen bokning angiven.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const tableNumber = Number(form.tableNumber);
       const tableId = await getOrCreateTableId(tableNumber);
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,7 +148,7 @@ export default function Boka() {
       }
       navigate('/bokningar');
     } catch (err: any) {
-      setError(err?.message || 'Okänt fel');
+      setError(err?.message ?? 'Misslyckades att uppdatera bokningen.');
     } finally {
       setSaving(false);
     }
@@ -106,8 +156,8 @@ export default function Boka() {
 
   return <Row>
     <Col md={8} lg={6} xl={5}>
-      <h2>Boka bord</h2>
-      {error && <Alert variant="danger" className="mt-2">Kunde inte spara: {error}</Alert>}
+      <h2>Redigera bokning</h2>
+      {error && <Alert variant="danger" className="mt-2">{error}</Alert>}
       <Form onSubmit={submitHandler} className="mt-3">
         <Form.Group className="mb-3">
           <Form.Label>Datum</Form.Label>
@@ -131,12 +181,12 @@ export default function Boka() {
           <Form.Label>Bord</Form.Label>
           <Form.Control type="number" min={1} value={form.tableNumber}
             onChange={e => set('tableNumber', Number(e.target.value))} required />
-          <Form.Text muted>Enkel modell: ange bordsnummer.</Form.Text>
+          <Form.Text muted>Ändra bordsnummer om bokningen ska flyttas.</Form.Text>
         </Form.Group>
 
         <div className="d-flex gap-2">
           <Button type="submit" disabled={saving}>
-            {saving ? <><Spinner size="sm" className="me-2" /> Sparar...</> : 'Boka'}
+            {saving ? <><Spinner size="sm" className="me-2" /> Uppdaterar...</> : 'Spara ändringar'}
           </Button>
           <Button variant="secondary" type="button" onClick={() => navigate('/bokningar')}>Avbryt</Button>
         </div>

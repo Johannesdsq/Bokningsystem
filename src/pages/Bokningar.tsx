@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { Row, Col, Table, Spinner, Alert, Button } from 'react-bootstrap';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 Bokningar.route = {
@@ -23,6 +23,7 @@ export default function Bokningar() {
 
   const { user, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [data, setData] = useState<Booking[] | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,7 @@ export default function Bokningar() {
     setLoadingData(true);
     (async () => {
       try {
-        const res = await fetch('/api/bookings');
+        const res = await fetch('/api/bookings', { credentials: 'include' });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -62,7 +63,7 @@ export default function Bokningar() {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch('/api/tables');
+        const res = await fetch('/api/tables', { credentials: 'include' });
         if (!res.ok) {
           return;
         }
@@ -98,7 +99,7 @@ export default function Bokningar() {
     setDeleting(id);
     setError(null);
     try {
-      const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -138,7 +139,12 @@ export default function Bokningar() {
                 <td>{b.guests}</td>
                 <td>{b.status}</td>
                 <td>{new Date(b.created).toLocaleString()}</td>
-                <td>
+                <td className="d-flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline-primary"
+                    onClick={() => navigate(`/bokningar/${b.id}/redigera`)}
+                  >Redigera</Button>
                   <Button
                     size="sm"
                     variant="danger"

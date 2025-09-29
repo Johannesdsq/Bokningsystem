@@ -5,6 +5,7 @@ import NotFoundPage from './pages/NotFoundPage.tsx';
 import Start from './pages/Start.tsx';
 import Bokningar from './pages/Bokningar.tsx';
 import Boka from './pages/Boka.tsx';
+import EditBooking from './pages/EditBooking.tsx';
 import Login from './pages/Login.tsx';
 import Register from './pages/Register.tsx';
 
@@ -22,6 +23,7 @@ export default [
   Start,
   Boka,
   Bokningar,
+  EditBooking,
   Login,
   Register
 ]
