@@ -49,15 +49,16 @@ export default function Header() {
         <Navbar.Toggle onClick={() => setExpanded(!expanded)} />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
-            {routes.filter(x => x.menuLabel).map(
-              ({ menuLabel, path }, i) =>
+            {routes
+              .filter(x => x.menuLabel)
+              .filter(x => !('requiresRole' in x) || (x as any).requiresRole === undefined || (user && user.role === (x as any).requiresRole))
+              .map(({ menuLabel, path }, i) => (
                 <Nav.Link
                   as={Link} key={i} to={path}
                   className={isActive(path) ? 'active' : ''}
-                  /* close menu after selection*/
                   onClick={closeMenuSoon}
                 >{menuLabel}</Nav.Link>
-            )}
+              ))}
           </Nav>
           <div className="d-flex align-items-center gap-2 ms-md-auto">
             {loading ? null : user ? (

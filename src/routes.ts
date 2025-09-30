@@ -9,6 +9,7 @@ import Bokningar from './pages/Bokningar.tsx';
 import EditBooking from './pages/EditBooking.tsx';
 import Login from './pages/Login.tsx';
 import Register from './pages/Register.tsx';
+import AdminTables from './pages/AdminTables.tsx';
 
 interface Route {
   element: JSX.Element;
@@ -27,7 +28,8 @@ export default [
   Bokningar,
   EditBooking,
   Login,
-  Register
+  Register,
+  AdminTables
 ]
   // map the route property of each page component to a Route
   .map(x => (({ element: createElement(x), ...x.route }) as Route))

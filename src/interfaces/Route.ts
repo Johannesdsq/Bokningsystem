@@ -7,4 +7,6 @@ export default interface Route {
   menuLabel?: string;
   index?: number;
   parent?: string;
+  // Optional: restrict menu visibility to a role
+  requiresRole?: 'admin' | 'user';
 }
