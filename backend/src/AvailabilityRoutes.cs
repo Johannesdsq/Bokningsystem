@@ -17,6 +17,7 @@ public static class AvailabilityRoutes
     public static void Configure()
     {
         EnsureAclRule();
+        EnsureTimeSlotsSetup();
     }
 
     public static void Start()
@@ -32,6 +33,11 @@ public static class AvailabilityRoutes
                 out var dt
             );
             var date = parsed ? dt.ToString("yyyy-MM-dd") : DateTime.UtcNow.ToString("yyyy-MM-dd");
+
+            // Read slots from DB (fallback to default if none configured)
+            var slotRows = SQLQuery("SELECT time FROM time_slots ORDER BY time");
+            var slotsFromDb = slotRows.Map(x => (string)x.time);
+            var slots = slotsFromDb.Length > 0 ? slotsFromDb : Arr(DefaultSlots);
 
             var tables = SQLQuery(
                 "SELECT id, tableNumber, seats, description FROM tables ORDER BY tableNumber"
@@ -57,7 +63,7 @@ public static class AvailabilityRoutes
             var response = Obj(new
             {
                 date,
-                slots = Arr(DefaultSlots),
+                slots,
                 tables,
                 bookings = activeBookings
             });
@@ -84,6 +90,50 @@ public static class AvailabilityRoutes
                     route = "/api/availability",
                     comment = "Allow availability endpoint"
                 }
+            );
+        }
+    }
+
+    private static void EnsureTimeSlotsSetup()
+    {
+        // Create table if it doesn't exist
+        SQLQuery(
+            @"CREATE TABLE IF NOT EXISTS time_slots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                time TEXT UNIQUE NOT NULL
+            )"
+        );
+
+        // Seed defaults if empty
+        var countRow = SQLQueryOne("SELECT COUNT(*) AS c FROM time_slots");
+        var count = Convert.ToInt32(countRow.c, CultureInfo.InvariantCulture);
+        if (count == 0)
+        {
+            foreach (var t in DefaultSlots)
+            {
+                SQLQuery("INSERT OR IGNORE INTO time_slots(time) VALUES($time)", new { time = t });
+            }
+        }
+
+        // Ensure ACL rules for /api/time_slots
+        EnsureAcl("visitor,user,admin", "GET", "/api/time_slots", "Allow everyone to read time slots");
+        EnsureAcl("admin", "POST", "/api/time_slots", "Allow admin to POST time slots");
+        EnsureAcl("admin", "PUT", "/api/time_slots", "Allow admin to PUT time slots");
+        EnsureAcl("admin", "DELETE", "/api/time_slots", "Allow admin to DELETE time slots");
+    }
+
+    private static void EnsureAcl(string roles, string method, string route, string comment)
+    {
+        var existing = SQLQuery(
+            "SELECT id FROM acl WHERE route = $route AND method = $method",
+            new { route, method }
+        );
+        if (existing.Length == 0)
+        {
+            SQLQuery(
+                @"INSERT INTO acl(userRoles, method, allow, route, match, comment)
+                  VALUES($userRoles, $method, 'allow', $route, 'true', $comment)",
+                new { userRoles = roles, method, route, comment }
             );
         }
     }
