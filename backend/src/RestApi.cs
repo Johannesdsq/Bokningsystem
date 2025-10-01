@@ -59,6 +59,26 @@ public static class RestApi
                 {
                     body.status = "booked";
                 }
+
+                // Double-booking protection: if trying to book an already booked slot
+                if (((string)body.status).ToLowerInvariant() == "booked")
+                {
+                    var conflict = SQLQueryOne(
+                        @"SELECT id FROM bookings
+                           WHERE tableId = $tableId
+                             AND bookingDate = $bookingDate
+                             AND bookingTime = $bookingTime
+                             AND status = 'booked'
+                           LIMIT 1",
+                        new { tableId = body.tableId, bookingDate = body.bookingDate, bookingTime = body.bookingTime },
+                        context
+                    );
+                    if (conflict != null && !conflict.HasKey("error") && conflict.id != null)
+                    {
+                        context.Response.StatusCode = 409;
+                        return RestResult.Parse(context, new { error = "Tidsluckan är redan bokad." });
+                    }
+                }
             }
 
             var parsed = ReqBodyParse(table, body);
@@ -181,6 +201,32 @@ public static class RestApi
                 }
                 var targetUserId = isAdmin && providedUserId != null ? providedUserId : (isAdmin ? existing.userId : user.id);
                 body.userId = targetUserId;
+
+                // Double-booking protection on update (when setting status to booked)
+                var willBeBooked = (body.HasKey("status") ? ((string)body.status) : ((string)existing.status))
+                    .ToLowerInvariant() == "booked";
+                if (willBeBooked)
+                {
+                    var tableId = body.HasKey("tableId") ? body.tableId : existing.tableId;
+                    var bookingDate = body.HasKey("bookingDate") ? body.bookingDate : existing.bookingDate;
+                    var bookingTime = body.HasKey("bookingTime") ? body.bookingTime : existing.bookingTime;
+                    var conflict = SQLQueryOne(
+                        @"SELECT id FROM bookings
+                           WHERE tableId = $tableId
+                             AND bookingDate = $bookingDate
+                             AND bookingTime = $bookingTime
+                             AND status = 'booked'
+                             AND id != $id
+                           LIMIT 1",
+                        new { tableId, bookingDate, bookingTime, id },
+                        context
+                    );
+                    if (conflict != null && !conflict.HasKey("error") && conflict.id != null)
+                    {
+                        context.Response.StatusCode = 409;
+                        return RestResult.Parse(context, new { error = "Tidsluckan är redan bokad." });
+                    }
+                }
             }
 
             var parsed = ReqBodyParse(table, body);

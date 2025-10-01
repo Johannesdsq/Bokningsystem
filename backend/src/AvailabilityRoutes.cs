@@ -19,6 +19,7 @@ public static class AvailabilityRoutes
         EnsureAclRule();
         EnsureTimeSlotsSetup();
         EnsureMenuAcl();
+        EnsureBookingUniqueIndex();
     }
 
     public static void Start()
@@ -146,5 +147,13 @@ public static class AvailabilityRoutes
         EnsureAcl("admin", "POST", "/api/menu_items", "Allow admin to POST menu items");
         EnsureAcl("admin", "PUT", "/api/menu_items", "Allow admin to PUT menu items");
         EnsureAcl("admin", "DELETE", "/api/menu_items", "Allow admin to DELETE menu items");
+    }
+
+    private static void EnsureBookingUniqueIndex()
+    {
+        // Prevent double bookings for the same table/date/time when status is 'booked'
+        SQLQuery(@"CREATE UNIQUE INDEX IF NOT EXISTS uniq_bookings_active
+                    ON bookings(tableId, bookingDate, bookingTime)
+                    WHERE status = 'booked'");
     }
 }
