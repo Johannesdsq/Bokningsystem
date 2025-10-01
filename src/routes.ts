@@ -11,6 +11,7 @@ import Login from './pages/Login.tsx';
 import Register from './pages/Register.tsx';
 import AdminTables from './pages/AdminTables.tsx';
 import AdminSlots from './pages/AdminSlots.tsx';
+import AdminMenu from './pages/AdminMenu.tsx';
 
 interface Route {
   element: JSX.Element;
@@ -31,7 +32,8 @@ export default [
   Login,
   Register,
   AdminTables,
-  AdminSlots
+  AdminSlots,
+  AdminMenu
 ]
   // map the route property of each page component to a Route
   .map(x => (({ element: createElement(x), ...x.route }) as Route))

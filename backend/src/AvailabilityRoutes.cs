@@ -18,6 +18,7 @@ public static class AvailabilityRoutes
     {
         EnsureAclRule();
         EnsureTimeSlotsSetup();
+        EnsureMenuAcl();
     }
 
     public static void Start()
@@ -136,5 +137,14 @@ public static class AvailabilityRoutes
                 new { userRoles = roles, method, route, comment }
             );
         }
+    }
+
+    private static void EnsureMenuAcl()
+    {
+        // Allow reading menu items to all, write access only to admin
+        EnsureAcl("visitor,user,admin", "GET", "/api/menu_items", "Allow everyone to read menu items");
+        EnsureAcl("admin", "POST", "/api/menu_items", "Allow admin to POST menu items");
+        EnsureAcl("admin", "PUT", "/api/menu_items", "Allow admin to PUT menu items");
+        EnsureAcl("admin", "DELETE", "/api/menu_items", "Allow admin to DELETE menu items");
     }
 }
